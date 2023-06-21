@@ -1,3 +1,16 @@
 {
-	"NOTION_TOKEN": ""
+	"NOTION_TOKEN": "secret_",
+	"DATABASE_ID": "",
+	"FILTER" : {
+		"and": [
+			{
+				"property": "Check",
+				"checkbox": {
+					"equals": false
+				}
+			}
+		]
+	},
+	"TITLE_PROPERTY": "Name",
+	"DATE_PROPERTY": "Scheduled"
 }
