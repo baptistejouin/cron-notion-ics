@@ -9,6 +9,8 @@ __status__ = "Development"
 
 import os, json
 from notion_client import Client
+from icalendar import Calendar, Event, vText
+from datetime import datetime, timedelta
 
 """
 	Load config.json file
@@ -79,8 +81,13 @@ def decode(databaseEntries):
                     {
                         "title": object["properties"][config["TITLE_PROPERTY"]][
                             "title"
-                        ][0]["text"]["content"],
+                        ][0]["plain_text"],
                         "date": object["properties"][config["DATE_PROPERTY"]]["date"],
+                        "uid": object["id"],
+                        "url": object["url"],
+                        "created_time": object["created_time"],
+                        "last_edited_time": object["last_edited_time"],
+                        "description": "🫢 test de description",
                     }
                 ]
             )
@@ -89,7 +96,60 @@ def decode(databaseEntries):
                 f"Date property named {config['DATE_PROPERTY']} is empty for this Database, verify your config.json file."
             )
             exit()
+    # flatten the list
+    filtered = [item for sublist in filtered for item in sublist]
     return filtered
+
+
+def convert_to_datetime(date_str):
+    """
+    Convert a date string from Notion API to datetime
+
+    @type date_str: str
+    @param date_str: Date string
+
+    @rtype: datetime
+    @return: Datetime
+    """
+    formats = ["%Y-%m-%d", "%Y-%m-%dT%H:%M:%S.%f%z"]
+    for fmt in formats:
+        try:
+            return datetime.strptime(date_str, fmt).date()
+        except ValueError:
+            pass
+    raise ValueError("Invalid date format: " + date_str)
+
+
+def create_events(decoded_data, cal):
+    """
+    Create an event
+
+    @type decoded_data: list
+    @param decoded_data: Decoded database entries
+
+    @type cal: Calendar
+    @param cal: Calendar
+
+    @rtype: void
+    @return: void
+
+    """
+    for event in decoded_data:
+        current = Event()
+
+        current.add("summary", vText(event["title"]))
+        current.add("dtstart", convert_to_datetime(event["date"]["start"]))
+        if event["date"]["end"]:
+            current.add("dtend", convert_to_datetime(event["date"]["end"]))
+        current.add("created", convert_to_datetime(event["created_time"]))
+        current.add("last-modified", convert_to_datetime(event["last_edited_time"]))
+        current.add("description", f"{event['description']} \n {event['url']}")
+        current.add("url", event["url"])
+        current.add("sequence", 0)  # todo: increment sequence if needed
+        # current.add("dtstamp", datetime.now())
+        # current.add("location", vText(event["location"]))
+
+        cal.add_component(current)
 
 
 if __name__ == "__main__":
@@ -98,4 +158,13 @@ if __name__ == "__main__":
     database_entries = getDatabaseEntries(notion)
     decoded_data = decode(database_entries)
 
-    print(decoded_data)
+    cal = Calendar()
+    cal.add("prodid", f"-//{__author__}//cron-notion-ics//FR")
+    cal.add("version", __version__)
+
+    create_events(decoded_data, cal)
+
+    with open(os.path.join(config["EXPORT_PATH"], "calendar.ics"), "wb") as f:
+        f.write(cal.to_ical())
+        print(f"Calendar exported to {config['EXPORT_PATH'] + '/calendar.ics'}")
+        f.close()

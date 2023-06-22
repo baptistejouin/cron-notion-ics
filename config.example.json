@@ -12,5 +12,6 @@
 		]
 	},
 	"TITLE_PROPERTY": "Name",
-	"DATE_PROPERTY": "Scheduled"
+	"DATE_PROPERTY": "Scheduled",
+	"EXPORT_PATH": "."
 }
