@@ -5,12 +5,12 @@ __copyright__ = "Copyright 2023, @baptistejouin"
 __credits__ = ["Baptiste Jouin"]
 __license__ = "MIT"
 __version__ = "1.0"
-__status__ = "Development"
+__status__ = "Production"
 
 import os, json
 from notion_client import Client
 from icalendar import Calendar, Event
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 """
 	Load config.json file
@@ -199,12 +199,7 @@ def create_events(decoded_data, cal):
 
         current.add("uid", event["uid"])
         current.add("summary", f"{event['emoji']}{event['title']}")
-        if event["date"]["end"]:
-            current.add("dtstart", convert_to_datetime(event["date"]["start"]))
-            current.add("dtend", convert_to_datetime(event["date"]["end"]))
-        else:
-            current.add("dtstart", convert_to_datetime(event["date"]["start"]).date())
-
+        current.add("dtstamp", datetime.now())
         current.add("created", convert_to_datetime(event["created_time"]))
         current.add("last-modified", convert_to_datetime(event["last_edited_time"]))
         current.add("description", event["description"])
@@ -212,6 +207,16 @@ def create_events(decoded_data, cal):
         current.add("sequence", 0)  # default value
         current.add("transp", "OPAQUE")  # default value
         current.add("status", "CONFIRMED")  # default value
+
+        if event["date"]["end"]:
+            dt_start = convert_to_datetime(event["date"]["start"])
+            dt_end = convert_to_datetime(event["date"]["end"])
+            current.add("dtstart", dt_start.astimezone(timezone.utc))
+            current.add("dtend", dt_end.astimezone(timezone.utc))
+        else:
+            dt_start = convert_to_datetime(event["date"]["start"]).date()
+            current.add("dtstart", dt_start)
+            current.add("dtend", dt_start + timedelta(days=1))
 
         cal.add_component(current)
 
@@ -223,8 +228,12 @@ if __name__ == "__main__":
     decoded_data = decode(database_entries)
 
     cal = Calendar()
-    cal.add("prodid", f"-//{__author__}//cron-notion-ics//FR")
-    cal.add("version", __version__)
+    cal.add("prodid", f"-//{__version__}//cron-notion-ics//FR")
+    cal.add("version", "2.0")
+    cal.add("X-WR-CALNAME", "Notion Sync")
+    cal.add("X-WR-TIMEZONE", "UTC")
+    cal.add("CALSCALE", "GREGORIAN")
+    cal.add("METHOD", "PUBLISH")
 
     create_events(decoded_data, cal)
 
