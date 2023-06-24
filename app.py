@@ -9,8 +9,8 @@ __status__ = "Development"
 
 import os, json
 from notion_client import Client
-from icalendar import Calendar, Event, vText
-from datetime import datetime, timedelta
+from icalendar import Calendar, Event
+from datetime import datetime
 
 """
 	Load config.json file
@@ -57,10 +57,64 @@ def getDatabaseEntries(notion: Client):
                 "filter": config["FILTER"],
             }
         )
+
         databaseEntries.append(query["results"])
         # flatten the list
         databaseEntries = [item for sublist in databaseEntries for item in sublist]
     return databaseEntries
+
+
+def getFirstContentBlock(notion: Client, block_id: str):
+    """
+    Get the content of a block
+
+    @type notion: Client
+    @param notion: Notion client
+
+    @type block_id: str
+    @param block_id: Block ID
+
+    @rtype: str
+    @return: Block content
+    """
+    block = notion.blocks.children.list(
+        **{
+            "block_id": block_id,
+            "page_size": config["MAX_BLOCK_PAGE_SIZE"],
+        }
+    )
+
+    # For each type of block, get the content, and build a string
+    plain_text = ""
+
+    numbered_item_count = 1  # Counter for numbered list items
+
+    for obj in block["results"]:
+        obj_type = obj["type"]
+        try:
+            rich_text = obj[obj_type]["rich_text"][0]
+
+            if rich_text.get("href"):
+                plain_text += rich_text["href"]
+            elif rich_text.get("plain_text"):
+                if obj_type.startswith("heading"):
+                    heading_level = obj_type.split("_")[
+                        1
+                    ]  # Extract the heading level number
+                    heading_symbols = "#" * int(heading_level)
+                    plain_text += heading_symbols + " " + rich_text["plain_text"]
+                elif obj_type == "bulleted_list_item":
+                    plain_text += "• " + rich_text["plain_text"]
+                elif obj_type == "numbered_list_item":
+                    plain_text += f"{numbered_item_count}. " + rich_text["plain_text"]
+                    numbered_item_count += 1
+                else:
+                    plain_text += rich_text["plain_text"]
+            plain_text += "\n"  # Add a line break after each block
+        except (KeyError, IndexError):
+            continue
+
+    return plain_text
 
 
 def decode(databaseEntries):
@@ -82,12 +136,18 @@ def decode(databaseEntries):
                         "title": object["properties"][config["TITLE_PROPERTY"]][
                             "title"
                         ][0]["plain_text"],
+                        "emoji": f'{object["icon"]["emoji"]} '
+                        if (
+                            (object["icon"] is not None)
+                            and (object["icon"]["type"] == "emoji")
+                        )
+                        else "",
                         "date": object["properties"][config["DATE_PROPERTY"]]["date"],
                         "uid": object["id"],
                         "url": object["url"],
                         "created_time": object["created_time"],
                         "last_edited_time": object["last_edited_time"],
-                        "description": "🫢 test de description",
+                        "description": getFirstContentBlock(notion, object["id"]),
                     }
                 ]
             )
@@ -137,17 +197,18 @@ def create_events(decoded_data, cal):
     for event in decoded_data:
         current = Event()
 
-        current.add("summary", vText(event["title"]))
+        current.add("uid", event["uid"])
+        current.add("summary", f"{event['emoji']}{event['title']}")
         current.add("dtstart", convert_to_datetime(event["date"]["start"]))
         if event["date"]["end"]:
             current.add("dtend", convert_to_datetime(event["date"]["end"]))
         current.add("created", convert_to_datetime(event["created_time"]))
         current.add("last-modified", convert_to_datetime(event["last_edited_time"]))
-        current.add("description", f"{event['description']} \n {event['url']}")
+        current.add("description", event["description"])
         current.add("url", event["url"])
-        current.add("sequence", 0)  # todo: increment sequence if needed
-        # current.add("dtstamp", datetime.now())
-        # current.add("location", vText(event["location"]))
+        current.add("sequence", 0)  # default value
+        current.add("transp", "OPAQUE")  # default value
+        current.add("status", "CONFIRMED")  # default value
 
         cal.add_component(current)
 

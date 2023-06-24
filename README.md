@@ -40,12 +40,23 @@ cp config.example.json config.json
 python3 notion-ics.py
 ```
 
-### ⛳️ Or, add a cronjob (every 5 minutes in this example)
+### 🍸 Or, add a cronjob (every 5 minutes in this example)
 
 ```bash
 crontab -e
 */5 * * * * /usr/bin/python3 /path/to/notion-ics/notion-ics.py
 ```
+
+### ☁️ Serve the ics file on a webserver
+
+You can use nginx, caddy, apache, etc.
+
+## Limitations
+
+- Content of the description (based on the content of the page) is not fully supported, some issues can occur.
+- For performance reasons, and api limitations, the script fetch only the last week of events, this can be changed in the `config.json` file.
+- Location is not supported yet.
+- Some iCalendar properties are defined by default, so not dynamic (eg. `SEQUENCE`, `TRANSP`, `STATUS`).
 
 ## License
 
