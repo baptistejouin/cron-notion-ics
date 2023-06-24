@@ -1,7 +1,5 @@
 # Cron Notion Calendar to ICS
 
-**Currently in development, not ready for production.**
-
 This is a simple script to sync a Notion calendar to an ics file and upload it to a webserver. This is useful if you want to sync your Notion calendar to your phone or other calendar app.
 
 ## Setup
