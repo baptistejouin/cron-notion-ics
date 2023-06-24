@@ -174,7 +174,7 @@ def convert_to_datetime(date_str):
     formats = ["%Y-%m-%d", "%Y-%m-%dT%H:%M:%S.%f%z"]
     for fmt in formats:
         try:
-            return datetime.strptime(date_str, fmt).date()
+            return datetime.strptime(date_str, fmt)
         except ValueError:
             pass
     raise ValueError("Invalid date format: " + date_str)
@@ -199,9 +199,12 @@ def create_events(decoded_data, cal):
 
         current.add("uid", event["uid"])
         current.add("summary", f"{event['emoji']}{event['title']}")
-        current.add("dtstart", convert_to_datetime(event["date"]["start"]))
         if event["date"]["end"]:
+            current.add("dtstart", convert_to_datetime(event["date"]["start"]))
             current.add("dtend", convert_to_datetime(event["date"]["end"]))
+        else:
+            current.add("dtstart", convert_to_datetime(event["date"]["start"]).date())
+
         current.add("created", convert_to_datetime(event["created_time"]))
         current.add("last-modified", convert_to_datetime(event["last_edited_time"]))
         current.add("description", event["description"])
