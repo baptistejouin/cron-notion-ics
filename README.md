@@ -54,7 +54,7 @@ You can use nginx, caddy, apache, etc.
 ## Limitations
 
 - Content of the description (based on the content of the page) is not fully supported, some issues can occur.
-- For performance reasons, and api limitations, the script fetch only the last week of events, this can be changed in the `config.json` file.
+- For performance reasons, and api limitations, the script fetch only the last week of events backwards, this can be changed in the `config.json` file.
 - Location is not supported yet.
 - Some iCalendar properties are defined by default, so not dynamic (eg. `SEQUENCE`, `TRANSP`, `STATUS`).
 

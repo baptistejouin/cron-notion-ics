@@ -1,18 +1,40 @@
 {
-	"NOTION_TOKEN": "secret_",
-	"DATABASE_ID": "",
-	"FILTER" : {
-		"and": [
-			{
-				"property": "Check",
-				"checkbox": {
-					"equals": false
-				}
-			}
-		]
-	},
-	"MAX_BLOCK_PAGE_SIZE": 15,
-	"TITLE_PROPERTY": "Name",
-	"DATE_PROPERTY": "Scheduled",
-	"EXPORT_PATH": "."
+  "NOTION_TOKEN": "secret_",
+  "DATABASE_ID": "",
+  "FILTER": {
+    "and": [
+      {
+        "property": "Check",
+        "checkbox": {
+          "equals": false
+        }
+      },
+      {
+        "or": [
+          {
+            "property": "Date",
+            "date": {
+              "past_week": {}
+            }
+          },
+          {
+            "property": "Date",
+            "date": {
+              "this_week": {}
+            }
+          },
+          {
+            "property": "Date",
+            "date": {
+              "next_year": {}
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "MAX_BLOCK_PAGE_SIZE": 15,
+  "TITLE_PROPERTY": "Name",
+  "DATE_PROPERTY": "Date",
+  "EXPORT_PATH": "."
 }
