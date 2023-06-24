@@ -28,7 +28,6 @@ pip install -r requirements.txt
 
 - Create a new Notion integration at https://www.notion.so/my-integrations
 - Copy the calendar ID from the URL of your calendar
-- Copy the URL of your webserver
 
 ```bash
 cp config.example.json config.json
